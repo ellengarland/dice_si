@@ -4,9 +4,38 @@
 ## total number of phrases present in population 1, and C is the total number of phrases present in population 2.
 
 # Example invocation: dice("~/Downloads/GAMA_2Jul_PA_Dice.txt")
-dice <- function(filename)
+dice <- function(filename, format="matrix")
 {
-    data <- read.table(filename, header=TRUE)
+    if (format == "lsi_strings")
+    {
+        # Maximum of 100 columns supported. read.csv will wrap columns if the first 5 lines are not representative
+        raw <- read.csv(filename, header=FALSE, sep=",", strip.white=TRUE, col.names=paste0("V",seq_len(100)))
+        # Determine the unique themese
+        themes <- na.exclude(unique(c(as.matrix(raw[-1][-1][-1][-1]))))
+        # Omit empty strings
+        themes <- themes[themes != ""]
+        # This is the source data, having removed the first, second and fourth column
+        source_data <- as.matrix(raw[-1][-1][-2])
+        row_count <- dim(source_data)[1]
+        data <- matrix(0, ncol=length(themes), nrow=row_count)
+        colnames(data) <- themes
+        rownames(data) <- source_data[,1]
+        for (i in 1:row_count)
+        {
+            for (j in 1:length(themes))
+            {
+                if (themes[j] %in% source_data[i,])
+                {
+                    data[i,j] = 1;
+                }        
+            }
+        }
+        data <- data.frame(data)
+    }
+    else
+    {
+        data <- read.table(filename, header=TRUE)
+    }
     song_count = nrow(data)
     output <- matrix(data=NA, nrow=song_count, ncol=song_count)
     rownames(output) <- rownames(data)
